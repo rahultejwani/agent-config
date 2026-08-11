@@ -8,8 +8,8 @@ The git repo **is** the runtime home — there is no separate firstmate overlay.
 
 | Repo | Host | Role |
 |---|---|---|
-| **agent-config** | `github.uberinternal.com/rahul-tejwani_UBER/agent-config` | Source of truth — policy, bootstrap, devpod preset |
-| **no-mistakes** (fork) | `github.com/rahultejwani/no-mistakes` | Patched binary only (run token budget until upstream merges) |
+| **agent-config** | [github.com/rahultejwani/agent-config-](https://github.com/rahultejwani/agent-config-) | Source of truth — policy, bootstrap, devpod preset |
+| **no-mistakes** (fork) | [github.com/rahultejwani/no-mistakes](https://github.com/rahultejwani/no-mistakes) | Patched binary only (run token budget until upstream merges) |
 
 ```
 ~/agent-config/
@@ -29,12 +29,12 @@ The git repo **is** the runtime home — there is no separate firstmate overlay.
 
 On **create** and **restart**:
 
-1. Devpod clones/updates **agent-config** from Uber internal GitHub.
+1. Devpod clones/updates **agent-config** from [github.com/rahultejwani/agent-config-](https://github.com/rahultejwani/agent-config-).
 2. `setup.sh` reads `no-mistakes/fork.env`, clones `github.com/rahultejwani/no-mistakes` to `~/src/no-mistakes`, and builds the binary.
 3. Managed policy merges into `~/.no-mistakes/config.yaml`.
 4. Claude launcher, Cursor rules, and PATH are applied.
 
-Personal **github.com** auth on the devpod is **not** required for bootstrap (public fork clone). It is only needed to push changes to the fork.
+Personal **github.com** auth on the devpod is required once to clone the private agent-config repo (`gh auth login -h github.com`). The no-mistakes fork is public and needs no auth to clone.
 
 ## Devpod preset (from laptop)
 

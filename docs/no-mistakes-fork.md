@@ -6,8 +6,8 @@ agent-config on **Uber internal GitHub** owns bootstrap and policy. The **no-mis
 
 | Asset | Location |
 |---|---|
-| AGENTS.md, setup.sh, devpod yaml, `no-mistakes/config.yaml` | `github.uberinternal.com/rahul-tejwani_UBER/agent-config` |
-| Token-budget patch (until upstream merges) | `github.com/rahultejwani/no-mistakes` |
+| AGENTS.md, setup.sh, devpod yaml, `no-mistakes/config.yaml` | [github.com/rahultejwani/agent-config-](https://github.com/rahultejwani/agent-config-) |
+| Token-budget patch (until upstream merges) | [github.com/rahultejwani/no-mistakes](https://github.com/rahultejwani/no-mistakes) |
 
 `setup.sh` reads `no-mistakes/fork.env` from the agent-config checkout. No home-directory file is required on devpod create/restart.
 
@@ -15,7 +15,13 @@ Optional local override: `~/.agent-config/no-mistakes-fork.env` (not in git).
 
 ## Devpod
 
-On create/restart, devpod clones agent-config from Uber internal and runs `setup.sh`. That clones the public personal fork and runs `go build`. **github.com auth is not required** on the devpod unless the fork is private.
+On create/restart, devpod clones agent-config from GitHub and runs `setup.sh`. That clones the public personal no-mistakes fork and runs `go build`.
+
+Run once on a new devpod:
+
+```bash
+gh auth login -h github.com
+```
 
 ## Push changes to the no-mistakes fork
 

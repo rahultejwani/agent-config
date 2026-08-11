@@ -4,7 +4,7 @@ region: virginia
 shell: zsh
 
 repositories:
-  - repo: git@github.uberinternal.com:rahul-tejwani_UBER/agent-config.git
+  - repo: https://github.com/rahultejwani/agent-config-.git
     dest: /home/user/agent-config
     update: true
 
