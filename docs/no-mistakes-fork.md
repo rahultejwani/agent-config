@@ -1,75 +1,52 @@
 # no-mistakes personal fork
 
-agent-config installs your fork when `~/.agent-config/no-mistakes-fork.env` exists.
-Until upstream merges the run-token-budget feature, the fork carries that patch.
+agent-config on **Uber internal GitHub** owns bootstrap and policy. The **no-mistakes code patch** lives on personal GitHub only.
 
-## 1. Register personal GitHub on the devpod
+## Split
 
-This machine is logged into **github.uberinternal.com** only. Add **github.com**:
+| Asset | Location |
+|---|---|
+| AGENTS.md, setup.sh, devpod yaml, `no-mistakes/config.yaml` | `github.uberinternal.com/rahul-tejwani_UBER/agent-config` |
+| Token-budget patch (until upstream merges) | `github.com/rahultejwani/no-mistakes` |
+
+`setup.sh` reads `no-mistakes/fork.env` from the agent-config checkout. No home-directory file is required on devpod create/restart.
+
+Optional local override: `~/.agent-config/no-mistakes-fork.env` (not in git).
+
+## Devpod
+
+On create/restart, devpod clones agent-config from Uber internal and runs `setup.sh`. That clones the public personal fork and runs `go build`. **github.com auth is not required** on the devpod unless the fork is private.
+
+## Push changes to the no-mistakes fork
+
+From a machine with personal GitHub auth:
 
 ```bash
-gh auth login -h github.com
+gh auth login -h github.com   # once per machine
+git -C ~/src/no-mistakes push origin main
 ```
 
-Choose:
-
-1. **GitHub.com** (not Enterprise)
-2. **HTTPS** (no SSH keys on devpod by default)
-3. **Login with a web browser** (or paste a personal access token)
-
-Verify:
+Or from a separate clone:
 
 ```bash
-gh auth status -h github.com
-gh api user --jq .login
+git -C ~/no-mistakes push personal main
 ```
 
-Note your login (e.g. `rahultejwani`) for the fork URL below.
+Fork URL: https://github.com/rahultejwani/no-mistakes
 
-### Optional: token instead of browser
-
-Create a classic PAT at https://github.com/settings/tokens with `repo` scope, then:
+## Stay current with upstream
 
 ```bash
-gh auth login -h github.com --with-token <<<"$GITHUB_TOKEN"
-```
-
-## 2. Fork on GitHub
-
-In the browser: open https://github.com/kunchenguid/no-mistakes → **Fork** → your personal account.
-
-Or from the devpod (after step 1):
-
-```bash
-gh repo fork kunchenguid/no-mistakes --remote=false --clone=false
-```
-
-## 3. Push the local patch to your fork
-
-If you built the patch in `~/no-mistakes`:
-
-```bash
-GITHUB_USER="$(gh api user --jq .login)"
-git -C ~/no-mistakes remote add personal "https://github.com/${GITHUB_USER}/no-mistakes.git" 2>/dev/null || true
-git -C ~/no-mistakes push -u personal main
-```
-
-## 4. Point agent-config at the fork
-
-```bash
-cp ~/agent-config/no-mistakes/fork.env.example ~/.agent-config/no-mistakes-fork.env
-# edit YOUR_GITHUB_USER → your login from step 1
-~/agent-config/setup.sh
-```
-
-## 5. Stay current with upstream
-
-```bash
-git -C ~/src/no-mistakes remote add upstream https://github.com/kunchenguid/no-mistakes.git 2>/dev/null || true
 git -C ~/src/no-mistakes fetch upstream
 git -C ~/src/no-mistakes merge upstream/main
 git -C ~/src/no-mistakes push origin main
-~/agent-config/setup.sh   # rebuild binary
+~/agent-config/setup.sh
 ```
 
-When upstream merges run-token-budget, drop the fork env file and use the stock install again.
+Add upstream once if missing:
+
+```bash
+git -C ~/src/no-mistakes remote add upstream https://github.com/kunchenguid/no-mistakes.git
+```
+
+When upstream merges run-token-budget, remove `no-mistakes/fork.env` from agent-config and let setup fall back to the upstream release install.

@@ -9,19 +9,6 @@ repositories:
     update: true
 
 tasks:
-  - name: Install or update no-mistakes
-    command: |
-      set -eu
-      if [[ -f "$HOME/.agent-config/no-mistakes-fork.env" ]]; then
-        /home/user/agent-config/setup.sh
-      elif command -v no-mistakes >/dev/null 2>&1; then
-        no-mistakes update -y || true
-      else
-        curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
-      fi
-      command -v no-mistakes >/dev/null 2>&1
-    when: on-create,on-restart
-
   - name: Apply agent config
     command: /home/user/agent-config/setup.sh
     when: on-create,on-restart

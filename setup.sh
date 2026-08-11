@@ -10,11 +10,17 @@ CURSOR_RULES="$HOME/.cursor/rules"
 log() { printf 'agent-config: %s\n' "$*"; }
 
 load_fork_env() {
-  local env_file="$HOME/.agent-config/no-mistakes-fork.env"
-  if [[ -f "$env_file" ]]; then
+  local repo_env="$CONFIG_ROOT/no-mistakes/fork.env"
+  local override_env="$HOME/.agent-config/no-mistakes-fork.env"
+  if [[ -f "$repo_env" ]]; then
     # shellcheck disable=SC1090
-    source "$env_file"
-    log "loaded no-mistakes fork env from $env_file"
+    source "$repo_env"
+    log "loaded no-mistakes fork env from $repo_env"
+  fi
+  if [[ -f "$override_env" ]]; then
+    # shellcheck disable=SC1090
+    source "$override_env"
+    log "applied no-mistakes fork override from $override_env"
   fi
 }
 

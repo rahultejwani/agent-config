@@ -4,7 +4,12 @@ Private devpod home for sahab's coding agents: slim `AGENTS.md`, preferences, PR
 
 The git repo **is** the runtime home — there is no separate firstmate overlay.
 
-## Layout
+## Repo layout
+
+| Repo | Host | Role |
+|---|---|---|
+| **agent-config** | `github.uberinternal.com/rahul-tejwani_UBER/agent-config` | Source of truth — policy, bootstrap, devpod preset |
+| **no-mistakes** (fork) | `github.com/rahultejwani/no-mistakes` | Patched binary only (run token budget until upstream merges) |
 
 ```
 ~/agent-config/
@@ -12,23 +17,24 @@ The git repo **is** the runtime home — there is no separate firstmate overlay.
 ├── CLAUDE.md → AGENTS.md  # Created by setup.sh
 ├── sahab.md               # Workflow and delivery preferences
 ├── pr-conventions.md      # go-code / ARH / Linear PR rules
-├── claude-settings.json   # Claude Code defaults template
-├── bin/claude-primary.sh  # Launch Claude from this directory
+├── no-mistakes/
+│   ├── config.yaml        # Managed ~/.no-mistakes defaults (4h CI, 500k budget)
+│   └── fork.env           # Pointer to personal no-mistakes fork
 ├── setup.sh               # Idempotent bootstrap (every devpod restart)
 ├── devpod/                # Devpod preset YAML
 └── cursor/agent.mdc       # Cursor rules (copied to ~/.cursor/rules/)
 ```
 
-## Create the private repo (one-time)
+## Devpod boot flow
 
-The devpod token cannot create GitHub repos. Create an empty private repo, then push:
+On **create** and **restart**:
 
-```bash
-# https://github.uberinternal.com/new → name: agent-config → Private
+1. Devpod clones/updates **agent-config** from Uber internal GitHub.
+2. `setup.sh` reads `no-mistakes/fork.env`, clones `github.com/rahultejwani/no-mistakes` to `~/src/no-mistakes`, and builds the binary.
+3. Managed policy merges into `~/.no-mistakes/config.yaml`.
+4. Claude launcher, Cursor rules, and PATH are applied.
 
-git -C ~/agent-config remote add origin git@github.uberinternal.com:rahul-tejwani_UBER/agent-config.git
-git -C ~/agent-config push -u origin main
-```
+Personal **github.com** auth on the devpod is **not** required for bootstrap (public fork clone). It is only needed to push changes to the fork.
 
 ## Devpod preset (from laptop)
 
@@ -50,13 +56,15 @@ claude          # or bin/claude-primary.sh
 
 ## What setup.sh does on every restart
 
-- Installs or updates `no-mistakes` (upstream release, or your personal fork when configured)
+- Builds `no-mistakes` from the personal fork (`no-mistakes/fork.env`)
 - Applies managed defaults to `~/.no-mistakes/config.yaml`
 - Symlinks `CLAUDE.md` → `AGENTS.md`
 - Merges Claude settings into `.claude/settings.local.json`
 - Installs `bin/claude` launcher on PATH
 - Copies Cursor rules to `~/.cursor/rules/agent.mdc`
 
-## Personal no-mistakes fork
+Optional override: `~/.agent-config/no-mistakes-fork.env` overrides the repo `fork.env` without editing git.
 
-See [docs/no-mistakes-fork.md](docs/no-mistakes-fork.md) for registering **github.com** on the devpod, forking `kunchenguid/no-mistakes`, and pointing bootstrap at your fork.
+## no-mistakes fork maintenance
+
+See [docs/no-mistakes-fork.md](docs/no-mistakes-fork.md) for syncing with upstream and pushing fork updates.
