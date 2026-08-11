@@ -1,64 +1,57 @@
 # agent-config
 
-Private devpod agent overlay: slim `AGENTS.md`, captain preferences, PR conventions, and automation to apply them on every devpod restart.
+Private devpod home for sahab's coding agents: slim `AGENTS.md`, preferences, PR conventions, and restart-safe bootstrap.
+
+The git repo **is** the runtime home — there is no separate firstmate overlay.
 
 ## Layout
 
-| Path | Purpose |
-|---|---|
-| `AGENTS.md` | Slim always-on agent contract (~80 lines) |
-| `captain.md` | Captain workflow preferences |
-| `pr-conventions.md` | go-code / ARH / Linear PR rules |
-| `claude-settings.json` | Claude Code defaults (Sonnet 1M, bypass permissions) |
-| `bin/claude-primary.sh` | Claude launcher with devpod defaults |
-| `setup.sh` | Idempotent apply script (run on every restart) |
-| `devpod/rahul-agent.devpod.yaml` | Devpod preset — installs no-mistakes + applies config |
+```
+~/agent-config/
+├── AGENTS.md              # Slim always-on agent contract
+├── CLAUDE.md → AGENTS.md  # Created by setup.sh
+├── sahab.md               # Workflow and delivery preferences
+├── pr-conventions.md      # go-code / ARH / Linear PR rules
+├── claude-settings.json   # Claude Code defaults template
+├── bin/claude-primary.sh  # Launch Claude from this directory
+├── setup.sh               # Idempotent bootstrap (every devpod restart)
+├── devpod/                # Devpod preset YAML
+└── cursor/agent.mdc       # Cursor rules (copied to ~/.cursor/rules/)
+```
 
-## Create the private repo (one-time, from laptop or web UI)
+## Create the private repo (one-time)
 
-The devpod token cannot create GitHub repos. Create an empty private repo first, then push this tree:
+The devpod token cannot create GitHub repos. Create an empty private repo, then push:
 
 ```bash
-# Web: https://github.uberinternal.com/new → name: agent-config → Private
+# https://github.uberinternal.com/new → name: agent-config → Private
 
-# From this devpod (after the empty repo exists):
 git -C ~/agent-config remote add origin git@github.uberinternal.com:rahul-tejwani_UBER/agent-config.git
 git -C ~/agent-config push -u origin main
 ```
 
-If your repo lives under a different org or name, update `repositories[].repo` in `devpod/rahul-agent.devpod.yaml` to match.
-
-## Devpod setup (from laptop)
+## Devpod preset (from laptop)
 
 ```bash
-# One-time: register preset (paste contents of devpod/rahul-agent.devpod.yaml)
 devpod config create-config rahul-agent --set-default
+# paste devpod/rahul-agent.devpod.yaml
 
-# Attach to existing devpod
 devpod update rahultejwani -r virginia -c devpod/rahul-agent.devpod.yaml
-
-# Or edit preset and push to all linked devpods
-devpod config edit-config rahul-agent
 ```
 
-New devpods:
+New devpods: `devpod create my-pod --config-name rahul-agent -r virginia`
+
+## Daily use
 
 ```bash
-devpod create my-pod --config-name rahul-agent -r virginia
+cd ~/agent-config
+claude          # or bin/claude-primary.sh
 ```
 
-## Manual apply (on devpod)
+## What setup.sh does on every restart
 
-```bash
-git clone git@github.uberinternal.com:rahul-tejwani_UBER/agent-config.git ~/agent-config
-~/agent-config/setup.sh
-```
-
-## What gets applied
-
-- `~/firstmate/AGENTS.md` and `CLAUDE.md` symlink
-- `~/firstmate/data/captain.md` and `pr-conventions.md`
-- `~/firstmate/bin/claude-primary.sh` on PATH
-- `~/firstmate/.claude/settings.local.json` merged
-- `~/.cursor/rules/agent.mdc` for Cursor sessions
-- `no-mistakes` CLI installed or updated
+- Installs or updates `no-mistakes`
+- Symlinks `CLAUDE.md` → `AGENTS.md`
+- Merges Claude settings into `.claude/settings.local.json`
+- Installs `bin/claude` launcher on PATH
+- Copies Cursor rules to `~/.cursor/rules/agent.mdc`

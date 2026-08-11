@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-# Idempotent apply of agent-config onto ~/firstmate. Safe on every devpod restart.
+# Idempotent devpod bootstrap for ~/agent-config. Safe on every restart.
 set -eu
 
 CONFIG_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FM_HOME="${FM_HOME:-$HOME/firstmate}"
-DATA_DIR="$FM_HOME/data"
-CLAUDE_DIR="$FM_HOME/.claude"
+AGENT_CONFIG_HOME="${AGENT_CONFIG_HOME:-$CONFIG_ROOT}"
+CLAUDE_DIR="$AGENT_CONFIG_HOME/.claude"
 CURSOR_RULES="$HOME/.cursor/rules"
 
 log() { printf 'agent-config: %s\n' "$*"; }
 
 ensure_no_mistakes() {
   if command -v no-mistakes >/dev/null 2>&1; then
-    log "no-mistakes already installed ($(no-mistakes version 2>/dev/null | head -1 || echo present))"
+    log "no-mistakes already installed"
     return 0
   fi
   log "installing no-mistakes..."
@@ -23,19 +22,9 @@ ensure_no_mistakes() {
   }
 }
 
-ensure_firstmate_layout() {
-  mkdir -p "$DATA_DIR" "$CLAUDE_DIR" "$FM_HOME/bin"
-}
-
-install_files() {
-  cp "$CONFIG_ROOT/AGENTS.md" "$FM_HOME/AGENTS.md"
-  ln -sfn AGENTS.md "$FM_HOME/CLAUDE.md"
-
-  cp "$CONFIG_ROOT/captain.md" "$DATA_DIR/captain.md"
-  cp "$CONFIG_ROOT/pr-conventions.md" "$DATA_DIR/pr-conventions.md"
-
-  install -m 0755 "$CONFIG_ROOT/bin/claude-primary.sh" "$FM_HOME/bin/claude-primary.sh"
-  ln -sfn claude-primary.sh "$FM_HOME/bin/claude"
+ensure_layout() {
+  mkdir -p "$AGENT_CONFIG_HOME/bin" "$CLAUDE_DIR"
+  ln -sfn AGENTS.md "$AGENT_CONFIG_HOME/CLAUDE.md"
 }
 
 install_claude_settings() {
@@ -62,15 +51,11 @@ PY
   else
     cp "$CONFIG_ROOT/claude-settings.json" "$CLAUDE_DIR/settings.local.json"
   fi
+}
 
-  mkdir -p "$HOME/.claude/skills"
-  if command -v no-mistakes >/dev/null 2>&1 && [[ -d "$HOME/.claude/skills/no-mistakes" ]]; then
-    log "no-mistakes skill present"
-  elif [[ -f "$HOME/.claude/skills/no-mistakes/SKILL.md" ]]; then
-    log "no-mistakes skill present"
-  else
-    log "no-mistakes skill will appear after first no-mistakes init in a repo"
-  fi
+install_launcher() {
+  install -m 0755 "$CONFIG_ROOT/bin/claude-primary.sh" "$AGENT_CONFIG_HOME/bin/claude-primary.sh"
+  ln -sfn claude-primary.sh "$AGENT_CONFIG_HOME/bin/claude"
 }
 
 install_cursor_rules() {
@@ -81,10 +66,15 @@ install_cursor_rules() {
 }
 
 ensure_path() {
-  local line='export PATH="$HOME/firstmate/bin:$PATH"'
+  local line='export PATH="$HOME/agent-config/bin:$PATH"'
+  local marker='agent-config/bin'
   for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
     [[ -f "$rc" ]] || touch "$rc"
-    if ! grep -Fq 'firstmate/bin' "$rc"; then
+    if grep -Fq 'firstmate/bin' "$rc"; then
+      sed -i '/firstmate\/bin/d' "$rc"
+      log "removed legacy firstmate PATH from $(basename "$rc")"
+    fi
+    if ! grep -Fq "$marker" "$rc"; then
       printf '\n# agent-config\n%s\n' "$line" >> "$rc"
       log "appended PATH to $(basename "$rc")"
     fi
@@ -92,9 +82,9 @@ ensure_path() {
 }
 
 ensure_no_mistakes
-ensure_firstmate_layout
-install_files
+ensure_layout
+install_launcher
 install_claude_settings
 install_cursor_rules
 ensure_path
-log "applied to $FM_HOME"
+log "ready at $AGENT_CONFIG_HOME"
