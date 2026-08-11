@@ -14,6 +14,20 @@ Private devpod agent overlay: slim `AGENTS.md`, captain preferences, PR conventi
 | `setup.sh` | Idempotent apply script (run on every restart) |
 | `devpod/rahul-agent.devpod.yaml` | Devpod preset — installs no-mistakes + applies config |
 
+## Create the private repo (one-time, from laptop or web UI)
+
+The devpod token cannot create GitHub repos. Create an empty private repo first, then push this tree:
+
+```bash
+# Web: https://github.uberinternal.com/new → name: agent-config → Private
+
+# From this devpod (after the empty repo exists):
+git -C ~/agent-config remote add origin git@github.uberinternal.com:rahul-tejwani_UBER/agent-config.git
+git -C ~/agent-config push -u origin main
+```
+
+If your repo lives under a different org or name, update `repositories[].repo` in `devpod/rahul-agent.devpod.yaml` to match.
+
 ## Devpod setup (from laptop)
 
 ```bash
