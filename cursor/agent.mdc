@@ -1,0 +1,9 @@
+---
+description: Direct agent contract for Rahul's devpods — slim rules, Uber workflow, no-mistakes shipping.
+globs:
+alwaysApply: true
+---
+
+Read `~/firstmate/data/captain.md` for workflow preferences and `~/firstmate/data/pr-conventions.md` before go-code ship work.
+
+Ship go-code through `/no-mistakes` and `arh`. Merge only when the captain approves. No AI attribution in git or PR text. Be short and precise.

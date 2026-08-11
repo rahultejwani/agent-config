@@ -1,0 +1,25 @@
+---
+schema_version: 0
+region: virginia
+shell: zsh
+
+repositories:
+  - repo: git@github.uberinternal.com:rahul-tejwani_UBER/agent-config.git
+    dest: /home/user/agent-config
+    update: true
+
+tasks:
+  - name: Install or update no-mistakes
+    command: |
+      set -eu
+      if command -v no-mistakes >/dev/null 2>&1; then
+        no-mistakes update -y || true
+      else
+        curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
+      fi
+      command -v no-mistakes >/dev/null 2>&1
+    when: on-create,on-restart
+
+  - name: Apply agent config
+    command: /home/user/agent-config/setup.sh
+    when: on-create,on-restart
