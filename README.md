@@ -50,8 +50,13 @@ claude          # or bin/claude-primary.sh
 
 ## What setup.sh does on every restart
 
-- Installs or updates `no-mistakes`
+- Installs or updates `no-mistakes` (upstream release, or your personal fork when configured)
+- Applies managed defaults to `~/.no-mistakes/config.yaml`
 - Symlinks `CLAUDE.md` → `AGENTS.md`
 - Merges Claude settings into `.claude/settings.local.json`
 - Installs `bin/claude` launcher on PATH
 - Copies Cursor rules to `~/.cursor/rules/agent.mdc`
+
+## Personal no-mistakes fork
+
+See [docs/no-mistakes-fork.md](docs/no-mistakes-fork.md) for registering **github.com** on the devpod, forking `kunchenguid/no-mistakes`, and pointing bootstrap at your fork.

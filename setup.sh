@@ -9,17 +9,71 @@ CURSOR_RULES="$HOME/.cursor/rules"
 
 log() { printf 'agent-config: %s\n' "$*"; }
 
-ensure_no_mistakes() {
-  if command -v no-mistakes >/dev/null 2>&1; then
-    log "no-mistakes already installed"
+load_fork_env() {
+  local env_file="$HOME/.agent-config/no-mistakes-fork.env"
+  if [[ -f "$env_file" ]]; then
+    # shellcheck disable=SC1090
+    source "$env_file"
+    log "loaded no-mistakes fork env from $env_file"
+  fi
+}
+
+install_no_mistakes_config() {
+  local dest="$HOME/.no-mistakes/config.yaml"
+  local template="$CONFIG_ROOT/no-mistakes/config.yaml"
+  [[ -f "$template" ]] || return 0
+  mkdir -p "$HOME/.no-mistakes"
+  if [[ ! -f "$dest" ]]; then
+    cp "$template" "$dest"
+    log "installed default ~/.no-mistakes/config.yaml"
     return 0
   fi
-  log "installing no-mistakes..."
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$template" "$dest" <<'PY'
+import sys
+from pathlib import Path
+import yaml
+
+template = yaml.safe_load(Path(sys.argv[1]).read_text()) or {}
+current = yaml.safe_load(Path(sys.argv[2]).read_text()) or {}
+
+def merge(dst, src):
+    for key, value in src.items():
+        if isinstance(value, dict) and isinstance(dst.get(key), dict):
+            merge(dst[key], value)
+        elif key not in dst:
+            dst[key] = value
+
+merge(current, template)
+Path(sys.argv[2]).write_text(yaml.dump(current, default_flow_style=False, sort_keys=False))
+PY
+    log "merged missing keys into ~/.no-mistakes/config.yaml"
+  fi
+}
+
+ensure_no_mistakes() {
+  load_fork_env
+  if [[ -n "${NO_MISTAKES_FORK:-}" ]]; then
+    log "installing no-mistakes from fork: $NO_MISTAKES_FORK"
+    NO_MISTAKES_FORK="$NO_MISTAKES_FORK" \
+      NO_MISTAKES_FORK_BRANCH="${NO_MISTAKES_FORK_BRANCH:-main}" \
+      NO_MISTAKES_SRC="${NO_MISTAKES_SRC:-$HOME/src/no-mistakes}" \
+      "$CONFIG_ROOT/bin/install-no-mistakes-fork.sh"
+    install_no_mistakes_config
+    return 0
+  fi
+  if command -v no-mistakes >/dev/null 2>&1; then
+    log "no-mistakes already installed"
+    install_no_mistakes_config
+    return 0
+  fi
+  log "installing no-mistakes from upstream release..."
   curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
   command -v no-mistakes >/dev/null 2>&1 || {
     echo "agent-config: no-mistakes install failed" >&2
     exit 1
   }
+  install_no_mistakes_config
 }
 
 ensure_layout() {

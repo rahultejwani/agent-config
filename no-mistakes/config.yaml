@@ -1,0 +1,26 @@
+# Managed defaults from agent-config. Merged into ~/.no-mistakes/config.yaml
+# on setup when keys are missing.
+
+ci_timeout: "4h"
+
+run_budget:
+  max_tokens: 500000
+
+auto_fix:
+  rebase: 3
+  lint: 3
+  test: 3
+  review: 0
+  document: 3
+  ci: 3
+
+intent:
+  enabled: true
+  threshold: 0.2
+  slack_days: 3
+
+ci:
+  rerun_transient: 0
+
+session_reuse: true
+log_level: info
