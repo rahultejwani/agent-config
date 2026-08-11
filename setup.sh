@@ -54,7 +54,12 @@ PY
 }
 
 install_launcher() {
-  install -m 0755 "$CONFIG_ROOT/bin/claude-primary.sh" "$AGENT_CONFIG_HOME/bin/claude-primary.sh"
+  local dest="$AGENT_CONFIG_HOME/bin/claude-primary.sh"
+  if [[ "$CONFIG_ROOT/bin/claude-primary.sh" -ef "$dest" ]]; then
+    chmod 0755 "$dest"
+  else
+    install -m 0755 "$CONFIG_ROOT/bin/claude-primary.sh" "$dest"
+  fi
   ln -sfn claude-primary.sh "$AGENT_CONFIG_HOME/bin/claude"
 }
 
