@@ -2,7 +2,7 @@
 # Idempotent apply of agent-config onto ~/firstmate. Safe on every devpod restart.
 set -eu
 
-CONFIG_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FM_HOME="${FM_HOME:-$HOME/firstmate}"
 DATA_DIR="$FM_HOME/data"
 CLAUDE_DIR="$FM_HOME/.claude"
