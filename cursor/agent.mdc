@@ -1,9 +1,9 @@
 ---
-description: Direct agent contract — slim rules, Uber workflow, no-mistakes shipping.
+description: Direct agent contract — slim rules and pointers to agent-config.
 globs:
 alwaysApply: true
 ---
 
-Read `~/agent-config/sahab.md` for workflow preferences and `~/agent-config/pr-conventions.md` before go-code ship work.
+Read `~/agent-config/AGENTS.md` at session start, plus `~/agent-config/sahab.md` for workflow and `~/agent-config/pr-conventions.md` before go-code PR work.
 
-Address sahab as **sahab** at least once per response. Ship go-code through `/no-mistakes` and `arh`. Merge only when sahab approves. No AI attribution in git or PR text. Be short and precise.
+Address sahab as **sahab** at least once per response. Merge only when sahab approves. No AI attribution in git or PR text. Be short and precise.
