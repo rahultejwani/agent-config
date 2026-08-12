@@ -3,6 +3,9 @@ schema_version: 0
 region: virginia
 shell: zsh
 
+packages:
+  - fzf
+
 repositories:
   - repo: https://github.com/rahultejwani/agent-config-.git
     dest: /home/user/agent-config
@@ -11,4 +14,4 @@ repositories:
 tasks:
   - name: Apply agent config
     command: /home/user/agent-config/setup.sh
-    when: on-create,on-restart
+    when: on-create,on-restart,on-update

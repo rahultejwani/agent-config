@@ -152,4 +152,7 @@ install_launcher
 install_claude_settings
 install_cursor_rules
 ensure_path
+if [[ -f "$CONFIG_ROOT/shell/setup.sh" ]]; then
+  bash "$CONFIG_ROOT/shell/setup.sh"
+fi
 log "ready at $AGENT_CONFIG_HOME"
