@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Strip AI co-author trailers — agent-config policy: no AI attribution in git.
+set -eu
+msg_file="${1:?commit message file required}"
+sed -i \
+  -e '/^Co-authored-by: Cursor /d' \
+  -e '/^Co-authored-by:.*cursoragent@cursor\.com/d' \
+  -e '/^Made-with: Cursor/d' \
+  "$msg_file"

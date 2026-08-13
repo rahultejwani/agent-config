@@ -100,6 +100,14 @@ ensure_layout() {
   ln -sfn AGENTS.md "$AGENT_CONFIG_HOME/CLAUDE.md"
 }
 
+install_githooks() {
+  local hook="$CONFIG_ROOT/githooks/commit-msg"
+  [[ -f "$hook" ]] || return 0
+  mkdir -p "$CONFIG_ROOT/.git/hooks"
+  install -m 0755 "$hook" "$CONFIG_ROOT/.git/hooks/commit-msg"
+  log "installed .git/hooks/commit-msg (strip AI co-author trailers)"
+}
+
 ensure_projects() {
   local projects="$AGENT_CONFIG_HOME/projects"
   mkdir -p "$projects"
@@ -245,6 +253,7 @@ ensure_path() {
 ensure_no_mistakes
 ensure_local_bin_path
 ensure_layout
+install_githooks
 ensure_projects
 install_tool_scripts
 ensure_treehouse
