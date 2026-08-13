@@ -87,6 +87,18 @@ ensure_layout() {
   ln -sfn AGENTS.md "$AGENT_CONFIG_HOME/CLAUDE.md"
 }
 
+ensure_projects() {
+  local projects="$AGENT_CONFIG_HOME/projects"
+  mkdir -p "$projects"
+  if [[ -d "$HOME/go-code-sparse" ]]; then
+    ln -sfn "$HOME/go-code-sparse" "$projects/go-code"
+    ln -sfn "$HOME/go-code-sparse" "$projects/go-code-sparse"
+  fi
+  if [[ -d "$HOME/infra-m3db" ]]; then
+    ln -sfn "$HOME/infra-m3db" "$projects/infra-m3db"
+  fi
+}
+
 install_claude_settings() {
   if command -v python3 >/dev/null 2>&1; then
     python3 - "$CONFIG_ROOT/claude-settings.json" "$CLAUDE_DIR/settings.local.json" <<'PY'
@@ -148,6 +160,7 @@ ensure_path() {
 
 ensure_no_mistakes
 ensure_layout
+ensure_projects
 install_launcher
 install_claude_settings
 install_cursor_rules
