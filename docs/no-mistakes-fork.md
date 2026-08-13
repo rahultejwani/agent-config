@@ -6,7 +6,7 @@ agent-config on **Uber internal GitHub** owns bootstrap and policy. The **no-mis
 
 | Asset | Location |
 |---|---|
-| AGENTS.md, setup.sh, devpod yaml, `no-mistakes/config.yaml` | [github.com/rahultejwani/agent-config-](https://github.com/rahultejwani/agent-config-) |
+| AGENTS.md, setup.sh, devpod yaml, `no-mistakes/config.yaml` | [github.com/rahultejwani/agent-config](https://github.com/rahultejwani/agent-config) |
 | Token-budget patch (until upstream merges) | [github.com/rahultejwani/no-mistakes](https://github.com/rahultejwani/no-mistakes) |
 
 `setup.sh` reads `no-mistakes/fork.env` from the agent-config checkout. No home-directory file is required on devpod create/restart.

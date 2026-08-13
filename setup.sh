@@ -9,6 +9,19 @@ CURSOR_RULES="$HOME/.cursor/rules"
 
 log() { printf 'agent-config: %s\n' "$*"; }
 
+ensure_local_bin_path() {
+  export PATH="$HOME/.local/bin:$PATH"
+  local line='export PATH="$HOME/.local/bin:$PATH"'
+  local marker='.local/bin'
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    [[ -f "$rc" ]] || touch "$rc"
+    grep -Fq '.local/bin' "$rc" || {
+      printf '\n# user-local binaries (treehouse, no-mistakes)\n%s\n' "$line" >> "$rc"
+      log "appended ~/.local/bin to $(basename "$rc")"
+    }
+  done
+}
+
 load_fork_env() {
   local repo_env="$CONFIG_ROOT/no-mistakes/fork.env"
   local override_env="$HOME/.agent-config/no-mistakes-fork.env"
@@ -123,6 +136,77 @@ PY
   else
     cp "$CONFIG_ROOT/claude-settings.json" "$CLAUDE_DIR/settings.local.json"
   fi
+
+  local user_settings="$HOME/.claude/settings.json"
+  mkdir -p "$HOME/.claude"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$CONFIG_ROOT/claude-settings.json" "$user_settings" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+src = Path(sys.argv[1])
+dest = Path(sys.argv[2])
+incoming = json.loads(src.read_text())
+keep = {"env", "statusLine"}
+incoming = {k: v for k, v in incoming.items() if k in keep}
+if dest.exists():
+    current = json.loads(dest.read_text())
+    for key, value in incoming.items():
+        if isinstance(value, dict) and isinstance(current.get(key), dict):
+            current[key].update(value)
+        else:
+            current[key] = value
+    dest.write_text(json.dumps(current, indent=2) + "\n")
+else:
+    dest.write_text(json.dumps(incoming, indent=2) + "\n")
+PY
+    log "merged Claude user settings (statusLine, env)"
+  fi
+}
+
+install_tool_scripts() {
+  chmod 0755 \
+    "$CONFIG_ROOT/bin/statusline.sh" \
+    "$CONFIG_ROOT/bin/treehouse-post-create.sh" \
+    "$CONFIG_ROOT/bin/verify-setup.sh"
+}
+
+ensure_treehouse() {
+  if command -v treehouse >/dev/null 2>&1; then
+    log "treehouse already installed ($(treehouse --version 2>/dev/null || echo ok))"
+    return 0
+  fi
+  log "installing treehouse..."
+  curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh
+  command -v treehouse >/dev/null 2>&1 || {
+    echo "agent-config: treehouse install failed" >&2
+    exit 1
+  }
+}
+
+install_treehouse_config() {
+  local dest="$HOME/.config/treehouse/config.toml"
+  local template="$CONFIG_ROOT/treehouse/config.toml"
+  [[ -f "$template" ]] || return 0
+  mkdir -p "$HOME/.config/treehouse"
+  sed "s|\$HOME|$HOME|g" "$template" > "$dest"
+  log "installed $dest"
+}
+
+write_repo_treehouse_config() {
+  local repo="$1" max="$2"
+  [[ -d "$repo/.git" || -f "$repo/.git" ]] || return 0
+  cat > "$repo/treehouse.toml" <<TOML
+# Managed by agent-config setup.sh — pool size for parallel agent worktrees.
+max_trees = $max
+TOML
+  log "wrote $repo/treehouse.toml (max_trees=$max)"
+}
+
+ensure_repo_treehouse_configs() {
+  write_repo_treehouse_config "$HOME/go-code-sparse" 3
+  write_repo_treehouse_config "$HOME/infra-m3db" 5
 }
 
 install_launcher() {
@@ -159,13 +243,25 @@ ensure_path() {
 }
 
 ensure_no_mistakes
+ensure_local_bin_path
 ensure_layout
 ensure_projects
+install_tool_scripts
+ensure_treehouse
+install_treehouse_config
+ensure_repo_treehouse_configs
 install_launcher
 install_claude_settings
 install_cursor_rules
 ensure_path
 if [[ -f "$CONFIG_ROOT/shell/setup.sh" ]]; then
   bash "$CONFIG_ROOT/shell/setup.sh"
+fi
+chmod 0755 "$CONFIG_ROOT/bin/verify-setup.sh" 2>/dev/null || true
+if "$CONFIG_ROOT/bin/verify-setup.sh"; then
+  log "verification passed"
+else
+  echo "agent-config: verification reported failures (see above)" >&2
+  exit 1
 fi
 log "ready at $AGENT_CONFIG_HOME"

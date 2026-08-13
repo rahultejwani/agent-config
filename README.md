@@ -8,7 +8,7 @@ The git repo **is** the runtime home — there is no separate firstmate overlay.
 
 | Repo | Host | Role |
 |---|---|---|
-| **agent-config** | [github.com/rahultejwani/agent-config-](https://github.com/rahultejwani/agent-config-) | Source of truth — policy, bootstrap, devpod preset |
+| **agent-config** | [github.com/rahultejwani/agent-config](https://github.com/rahultejwani/agent-config) | Source of truth — policy, bootstrap, devpod preset |
 | **no-mistakes** (fork) | [github.com/rahultejwani/no-mistakes](https://github.com/rahultejwani/no-mistakes) | Patched binary only (run token budget until upstream merges) |
 
 ```
@@ -29,7 +29,7 @@ The git repo **is** the runtime home — there is no separate firstmate overlay.
 
 On **create** and **restart**:
 
-1. Devpod clones/updates **agent-config** from [github.com/rahultejwani/agent-config-](https://github.com/rahultejwani/agent-config-).
+1. Devpod clones/updates **agent-config** from [github.com/rahultejwani/agent-config](https://github.com/rahultejwani/agent-config).
 2. `setup.sh` reads `no-mistakes/fork.env`, clones `github.com/rahultejwani/no-mistakes` to `~/src/no-mistakes`, and builds the binary.
 3. Managed policy merges into `~/.no-mistakes/config.yaml`.
 4. Claude launcher, Cursor rules, and PATH are applied.
@@ -58,10 +58,26 @@ claude          # or bin/claude-primary.sh
 
 - Builds `no-mistakes` from the personal fork (`no-mistakes/fork.env`)
 - Applies managed defaults to `~/.no-mistakes/config.yaml`
+- Ensures `~/.local/bin` and `~/agent-config/bin` are on PATH
+- Installs **treehouse** (if missing) and `~/.config/treehouse/config.toml` hooks
+- Writes per-repo `treehouse.toml` (go-code-sparse: 3 pools, infra-m3db: 5)
+- Symlinks `projects/go-code`, `projects/go-code-sparse`, `projects/infra-m3db` when repos exist
+- Installs Claude **statusline** into `~/.claude/settings.json`
 - Symlinks `CLAUDE.md` → `AGENTS.md`
 - Merges Claude settings into `.claude/settings.local.json`
 - Installs `bin/claude` launcher on PATH
 - Copies Cursor rules to `~/.cursor/rules/agent.mdc`
+- Runs shell bootstrap (`shell/setup.sh`)
+- Runs `bin/verify-setup.sh` — setup **fails** if verification fails
+
+## Not auto-provisioned (manual on a new devpod)
+
+| Item | Why |
+|---|---|
+| `~/go-code-sparse`, `~/infra-m3db` | Uber internal checkouts — clone separately; setup skips missing repos |
+| `gh auth login -h github.com` | Required once to clone private agent-config |
+| Claude workspace trust | Accept once per project if statusline does not appear |
+| Push agent-config to origin | Other devpods pull from GitHub on restart — unpushed local commits do not replicate |
 
 Optional override: `~/.agent-config/no-mistakes-fork.env` overrides the repo `fork.env` without editing git.
 

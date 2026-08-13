@@ -5,9 +5,10 @@ shell: zsh
 
 packages:
   - fzf
+  - jq
 
 repositories:
-  - repo: https://github.com/rahultejwani/agent-config-.git
+  - repo: https://github.com/rahultejwani/agent-config.git
     dest: /home/user/agent-config
     update: true
 

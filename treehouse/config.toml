@@ -1,0 +1,5 @@
+# Managed by agent-config setup.sh — copied to ~/.config/treehouse/config.toml
+# Per-repo max_trees live in each repo's treehouse.toml (go-code: 3, infra-m3db: 5).
+
+[hooks]
+post_create = ["$HOME/agent-config/bin/treehouse-post-create.sh"]

@@ -6,5 +6,10 @@
     "defaultMode": "bypassPermissions"
   },
   "model": "sonnet[1m]",
-  "effortLevel": "medium"
+  "effortLevel": "medium",
+  "statusLine": {
+    "type": "command",
+    "command": "~/agent-config/bin/statusline.sh",
+    "padding": 0
+  }
 }

@@ -26,6 +26,7 @@
 
 ## go-code delivery
 
+- **New-line coverage:** keep modified-line coverage above **85%** on every change (target 90%+). Run `bazel coverage` on touched packages before publish.
 1. Collect Linear issue (`MET-####`) and project at intake when missing.
 2. Translate `MET-1234` → `LINEAR-MET-1234` in the oldest commit `Jira Issues:` line; put `[MET-1234]` in the PR summary.
 3. Branch names: `rahul.tejwani/<short-description>`.
