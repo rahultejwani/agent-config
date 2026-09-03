@@ -16,6 +16,7 @@ The git repo **is** the runtime home — there is no separate firstmate overlay.
 ├── AGENTS.md              # Slim always-on agent contract
 ├── CLAUDE.md → AGENTS.md  # Created by setup.sh
 ├── sahab.md               # Workflow and delivery preferences
+├── ship.md                # Default ship path (local validate → arh). no-mistakes is opt-in
 ├── pr-conventions.md      # go-code / ARH / Linear PR rules
 ├── no-mistakes/
 │   ├── config.yaml        # Managed ~/.no-mistakes defaults (4h CI, 500k budget)

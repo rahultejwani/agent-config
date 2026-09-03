@@ -12,8 +12,8 @@
 
 | Project | Checkout | Delivery path |
 |---|---|---|
-| go-code | `projects/go-code` (sparse git-bzl) | no-mistakes → arh → sahab merge |
-| infra-m3db | `projects/infra-m3db` | no-mistakes → sahab merge |
+| go-code | `projects/go-code` (sparse git-bzl) | `ship.md` → arh → sahab merge |
+| infra-m3db | `projects/infra-m3db` | `ship.md` → sahab merge |
 
 ## Uber devpod workflow
 
@@ -27,16 +27,16 @@
 ## go-code delivery
 
 - **New-line coverage:** keep modified-line coverage above **85%** on every change (target 90%+). Run `bazel coverage` on touched packages before publish.
-1. Collect Linear issue (`MET-####`) and project at intake when missing.
+1. Collect Linear issue (`MET-####`) at intake when missing. Do not ask for Linear project.
 2. Translate `MET-1234` → `LINEAR-MET-1234` in the oldest commit `Jira Issues:` line; put `[MET-1234]` in the PR summary.
 3. Branch names: `rahul.tejwani/<short-description>`.
 4. Publish with `arh` from the sparse checkout — not bare `gh pr create`, not public GitHub.
-5. Run `/no-mistakes` (or `no-mistakes axi run`) before reporting work complete.
+5. Follow `~/agent-config/ship.md`. Do not run no-mistakes unless sahab asks.
 6. Spot-check before done: `git log --format=%B main..HEAD` and the published PR body.
 
 ## Delivery and review
 
-- go-code validates through no-mistakes: full validation pipeline, green CI, sahab merge approval.
+- go-code ships through `~/agent-config/ship.md` (local validate → arh → sahab merge). Do not run no-mistakes unless sahab asks.
 - Escalate destructive, irreversible, or security-sensitive choices; routine gates stay within task scope.
 - **No AI attribution in git or PR text:** never add `Co-Authored-By`, `Made with Cursor`, `Generated with`, Bugbot, or similar markers to commit messages or PR titles/bodies.
 - Before landing, spot-check the stack: `git log --format=%B` on the branch and the PR body in arh/gh.
@@ -45,7 +45,7 @@
 
 - Default team: **MET** — [linear.app/uber/team/MET/overview](https://linear.app/uber/team/MET/overview). Assume `MET-####` issue ids unless sahab names another team.
 - At intake, collect **Linear issue** (id or URL) when the work maps to an existing ticket; prefer `MET-####` in branch or PR title when useful.
-- At intake, **ask for the Linear project** when dispatching PR work if sahab did not name one (MET team has multiple projects — do not guess).
+- Do not ask for Linear project. It is on the ticket.
 - **ARH propagation (automatic):** when sahab supplies a Linear id such as `MET-1234`, translate it to **`LINEAR-MET-1234`** for Arrowhead without asking again. Include that token in the oldest commit message under `Jira Issues:` and may repeat it in the branch name.
 - On PR ready, sahab updates Linear (In Review / Done); surface the PR URL, not Linear state changes, unless explicitly asked.
 
