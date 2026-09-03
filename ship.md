@@ -16,9 +16,9 @@ Read `~/agent-config/pr-conventions.md` before commit or PR. Do not copy those r
 2. Implement on `rahul.tejwani/<short-description>`.
 3. When code is ready, start **in the same turn**:
    - Main: local validate
-   - Reviewer A: GPT-5.6 sol (`gpt-5.6-sol-high`)
-   - Reviewer B: Opus 5 (`claude-opus-5-thinking-high`)
-4. Collate both reviews. Fix what is clear. If findings conflict or the intent is unclear, **summarize and ask** — include the flow you followed and the original intent. Do not pick a side.
+   - Not hot: Reviewer A only — GPT-5.6 sol (`gpt-5.6-sol-high`)
+   - Hot: Reviewer A + Reviewer B (Opus 5, `claude-opus-5-thinking-high`) + bench/fuzz below
+4. Collate the review(s). Fix what is clear. If findings conflict or the intent is unclear, **summarize and ask** — include the flow you followed and the original intent. Do not pick a side.
 5. Commit (only if asked, or as part of an explicit ship request).
 6. Publish with `arh` from the sparse checkout.
 7. Stop. Sahab merges.
@@ -43,23 +43,33 @@ If the diff touches both, treat the whole change as hot path.
 
 If in doubt whether it is hot path, ask. Do not invent a bench “just in case”.
 
-## Parallel review (required on every ship)
+## Review
 
-Launch both reviewers as **background subagents** while local validate runs. They read the diff only. They do not edit, commit, or publish.
+Launch reviewer(s) as **background subagents** while local validate runs. They read the diff only. They do not edit, commit, or publish.
 
-| Lane | Model | Job |
+Prompt each with: the user intent, the file list, “hot path: yes/no”, and “findings only — no drive-by refactors”.
+
+| Path | Reviewers | Extra checks |
 |---|---|---|
-| Main | this agent | `git-bzl` / gazelle / targeted `bazel test` (+ bench/fuzz if hot path) |
-| Review A | `gpt-5.6-sol-high` | Bugs, wrong semantics, missing tests, hot-path cost |
-| Review B | `claude-opus-5-thinking-high` | Same prompt, independent |
+| Not hot | GPT-5.6 sol only (`gpt-5.6-sol-high`) | None — no bench, no fuzz, no Opus |
+| Hot | GPT-5.6 sol **and** Opus 5 (`claude-opus-5-thinking-high`) | Bench + fuzz rules in **Hot path** above |
 
-Prompt both with: the user intent, the file list, “hot path: yes/no”, and “findings only — no drive-by refactors”.
+| Lane | When | Model | Job |
+|---|---|---|---|
+| Main | always | this agent | `git-bzl` / gazelle / targeted `bazel test` (+ bench/fuzz if hot) |
+| Review A | always | `gpt-5.6-sol-high` | Bugs, wrong semantics, missing tests, hot-path cost |
+| Review B | hot path only | `claude-opus-5-thinking-high` | Same prompt as A, independent |
+
+Do not launch Review B on a not-hot change.
 
 ### Collate
 
-| Both agree | Implement the fix, then re-run **only** the failed lane (tests or the reviewers). |
+| Case | Action |
 |---|---|
-| One finding, other silent | Implement if it matches intent and is a real bug/test gap. Else ask. |
+| One reviewer (not hot), finding is a real bug/test gap matching intent | Fix, then re-run that reviewer. |
+| One reviewer (not hot), finding is style/drive-by or unclear vs intent | Do **not** guess. Summarize and ask. |
+| Both agree (hot) | Implement the fix, then re-run **only** the failed lane (tests or the reviewers). |
+| One finding, other silent (hot) | Implement if it matches intent and is a real bug/test gap. Else ask. |
 | Contradict or unclear vs intent | Do **not** guess. Short summary: finding A, finding B, original intent, what you would do. Ask. |
 
 Do not `arh` until collation is done (fixes landed, or sahab answered).
@@ -85,7 +95,7 @@ If a leftover no-mistakes run owns the branch (`pipeline_owned`), abort it befor
 git log --format=%B main..HEAD
 ```
 
-Every commit has a body. Oldest has `Jira Issues: LINEAR-MET-####`. Published PR summary has `[MET-####]`. Test Plan lists what you actually ran, including bench/fuzz if hot path, and that both reviewers ran.
+Every commit has a body. Oldest has `Jira Issues: LINEAR-MET-####`. Published PR summary has `[MET-####]`. Test Plan lists what you actually ran, GPT-5.6 review, and — if hot path — Opus 5 plus bench/fuzz.
 
 ## Explicitly out
 
