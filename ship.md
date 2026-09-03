@@ -41,7 +41,19 @@ Paste all of this in the Ship prompt. Do not tell Ship to “go look around.”
 - File list
 - The **diff** (`git diff` / `git diff main...HEAD` of those files). If too large, the hunks for each listed file.
 - What Main already ran (if anything)
+- The **PR body** rules below (paste the section, not a paraphrase)
 - “You own ship.md from validate through `arh`. Main will not touch the tree.”
+
+## PR body (always pass to Ship)
+
+The published PR is the **work**. It is not the ship conversation.
+
+1. Lead with what changed, at the level a reviewer can decide merge.
+2. Then a few load-bearing details only (invariant, allow/reject, why this approach).
+3. Add a high-level diagram when the change is a control-flow or invariant (mermaid).
+4. Test Plan: commands actually run. Nothing else.
+
+Never publish: chat decisions, review-lane or model names, deferred findings, collation notes, “sahab”, Main/Ship, no-mistakes, or how the PR was produced.
 
 ## Hot path
 
@@ -129,7 +141,7 @@ If a leftover no-mistakes run owns the branch (`pipeline_owned`), abort it befor
 git log --format=%B main..HEAD
 ```
 
-Every commit has a body. Oldest has `Jira Issues: LINEAR-MET-####`. Published PR summary has `[MET-####]`. Test Plan lists what you actually ran, GPT-5.6 review, and — if hot path — Opus 5 plus bench/fuzz.
+Every commit has a body. Oldest has `Jira Issues: LINEAR-MET-####`. Published PR summary has `[MET-####]`. Test Plan is commands only (plus bench/fuzz if hot). Reviews stay off the PR.
 
 ## Explicitly out
 
