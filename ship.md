@@ -10,18 +10,38 @@ Read `~/agent-config/pr-conventions.md` before commit or PR. Do not copy those r
 - Do **not** ask for Linear project. The ticket already has it.
 - `MET-1234` → oldest commit `Jira Issues: LINEAR-MET-1234`. PR summary ends with `[MET-1234]`.
 
+## Roles
+
+| Role | Who | Owns |
+|---|---|---|
+| Main | this agent | Intake, implement, classify hot path, hand off. Stops touching the tree after handoff. |
+| Ship | one background subagent | Local validate, reviews, collate, commit (if this is an explicit ship), `arh`. |
+| Review A/B | nested under Ship | Read-only findings. Never write, never bazel. |
+
+Main does **not** run `git-bzl`, gazelle, bazel, or `arh` in parallel with Ship. That shared-tree contention is what stalls Review B.
+
 ## Default path
 
 1. Classify hot path (below). If unsure, **stop and ask** before writing benches or fuzzers.
 2. Implement on `rahul.tejwani/<short-description>`.
-3. When code is ready, start **in the same turn**:
-   - Main: local validate
-   - Not hot: Reviewer A only — GPT-5.6 sol (`gpt-5.6-sol-high`)
-   - Hot: Reviewer A + Reviewer B (Opus 5, `claude-opus-5-thinking-high`) + bench/fuzz below
-4. Collate the review(s). Fix what is clear. If findings conflict or the intent is unclear, **summarize and ask** — include the flow you followed and the original intent. Do not pick a side.
-5. Commit (only if asked, or as part of an explicit ship request).
-6. Publish with `arh` from the sparse checkout.
-7. Stop. Sahab merges.
+3. When code is ready, **freeze** the tree (working tree matches what will ship). Then Main launches **one** Ship subagent with the packet below and does not edit the repo again.
+4. Ship: local validate, then reviewers (only after validate has started *and* the tree is idle — no refresh in flight).
+5. Ship collates. Fix what is clear. If findings conflict or the intent is unclear, **summarize and ask** — include the flow and the original intent. Do not pick a side.
+6. Commit (only if asked, or as part of an explicit ship request).
+7. Publish with `arh` from the sparse checkout.
+8. Stop. Sahab merges.
+
+## Handoff packet (Main → Ship)
+
+Paste all of this in the Ship prompt. Do not tell Ship to “go look around.”
+
+- Locked intent (what must / must not change)
+- Hot path: yes/no, and why
+- Branch, repo path, Linear id
+- File list
+- The **diff** (`git diff` / `git diff main...HEAD` of those files). If too large, the hunks for each listed file.
+- What Main already ran (if anything)
+- “You own ship.md from validate through `arh`. Main will not touch the tree.”
 
 ## Hot path
 
@@ -45,9 +65,9 @@ If in doubt whether it is hot path, ask. Do not invent a bench “just in case�
 
 ## Review
 
-Launch reviewer(s) as **background subagents** while local validate runs. They read the diff only. They do not edit, commit, or publish.
+Ship launches reviewer(s) as **background subagents** only after the tree is idle (no `git-bzl refresh` / gazelle in flight). Main is not a reviewer.
 
-Prompt each with: the user intent, the file list, “hot path: yes/no”, and “findings only — no drive-by refactors”.
+Prompt each with: the handoff packet (intent, file list, **pasted diff**, hot path yes/no), and the read-only rules below.
 
 | Path | Reviewers | Extra checks |
 |---|---|---|
@@ -56,17 +76,27 @@ Prompt each with: the user intent, the file list, “hot path: yes/no”, and �
 
 | Lane | When | Model | Job |
 |---|---|---|---|
-| Main | always | this agent | `git-bzl` / gazelle / targeted `bazel test` (+ bench/fuzz if hot) |
+| Ship | always | ship subagent | `git-bzl` / gazelle / targeted `bazel test` (+ bench/fuzz if hot) |
 | Review A | always | `gpt-5.6-sol-high` | Bugs, wrong semantics, missing tests, hot-path cost |
 | Review B | hot path only | `claude-opus-5-thinking-high` | Same prompt as A, independent |
 
 Do not launch Review B on a not-hot change.
 
+### Reviewer rules (read-only)
+
+- `Read` the listed files and the pasted diff. One extra file only if a listed hook calls it (e.g. pushdown embed).
+- One pass. Cap ~15 tool calls. Then return findings or `no findings`.
+- Do **not**: bazel, gazelle, `git-bzl`, `gofmt`, write/edit, commit, `arh`, or any Shell that can change the tree.
+- Optional read-only Shell: `git diff -- <listed paths>` only.
+- Findings vs intent only. Not style. Not drive-by refactors.
+
 ### Collate
+
+Collate **P0 vs intent**. Error-string nits, extra e2e, and benches of adjacent code are fix-or-defer — not another explore loop.
 
 | Case | Action |
 |---|---|
-| One reviewer (not hot), finding is a real bug/test gap matching intent | Fix, then re-run that reviewer. |
+| One reviewer (not hot), finding is a real bug/test gap matching intent | Fix, then re-run that reviewer (read-only, new diff pasted). |
 | One reviewer (not hot), finding is style/drive-by or unclear vs intent | Do **not** guess. Summarize and ask. |
 | Both agree (hot) | Implement the fix, then re-run **only** the failed lane (tests or the reviewers). |
 | One finding, other silent (hot) | Implement if it matches intent and is a real bug/test gap. Else ask. |
@@ -74,9 +104,13 @@ Do not launch Review B on a not-hot change.
 
 Do not `arh` until collation is done (fixes landed, or sahab answered).
 
+After a fix, freeze again before re-launching a reviewer. Do not refresh the sparse tree while a reviewer is running.
+
 ## Local validate
 
-Run only what the change touched. Never `bazel build //...` or `bazel test //...`. Never gazelle the whole repo.
+Ship only. Run only what the change touched. Never `bazel build //...` or `bazel test //...`. Never gazelle the whole repo.
+
+Finish refresh/gazelle **before** launching reviewers. Do not overlap them.
 
 | Change | Command |
 |---|---|
@@ -106,3 +140,4 @@ Every commit has a body. Oldest has `Jira Issues: LINEAR-MET-####`. Published PR
 | Merge | sahab said merge |
 | Linear project question | never — it is on the ticket |
 | Public GitHub / bare `gh pr create` | never |
+| Main running bazel / refresh next to Ship | never |
