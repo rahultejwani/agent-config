@@ -18,7 +18,7 @@
 ## Uber devpod workflow
 
 - Work on go-code through the sparse git-bzl checkout (`projects/go-code` → `~/go-code-sparse`), not the full `~/go-code` tree.
-- Before build or test in a sparse tree, run `bin/git-bzl refresh` (and `bin/git-bzl add` only when new targets are needed).
+- Before build or test in a sparse tree, run `bin/git-bzl refresh` (and `bin/git-bzl add` only when new targets are needed). Review subagents do not: they are read-only and use `go test` if they must run a check. The Ship subagent runs `git-bzl refresh` and the Bazel tests. See `ship.md`.
 - Never edit `BUILD.bazel` or other build files to fix build or lint drift unless the change is in the PR scope — try `git-bzl refresh` first.
 - To rebase onto main: checkout `main`, sync with `origin/main`, checkout the feature branch, then `arh rebase` (prefer over raw `git rebase`; `arh rebase --sync` is faster when syncing main is needed).
 - Publish stacked PRs with `arh` on `github.uberinternal.com`; do not push to public GitHub.

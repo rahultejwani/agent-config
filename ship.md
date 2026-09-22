@@ -77,7 +77,9 @@ If in doubt whether it is hot path, ask. Do not invent a bench â€œjust in caseâ€
 
 ## Review
 
-Ship launches reviewer(s) as **background subagents** only after the tree is idle (no `git-bzl refresh` / gazelle in flight). Main is not a reviewer.
+Ship launches reviewer(s) as **background subagents** only after the tree is idle (no `git-bzl refresh` / gazelle in flight). Main is not a reviewer. Review is **read-only**.
+
+Ship owns `bin/git-bzl refresh`, gazelle, and targeted `bazel test` (plus bench/fuzz if hot path). Reviewers do not. Finish refresh before launching them, and do not refresh again while a reviewer is running.
 
 Prompt each with: the handoff packet (intent, file list, **pasted diff**, hot path yes/no), and the read-only rules below.
 
@@ -88,8 +90,8 @@ Prompt each with: the handoff packet (intent, file list, **pasted diff**, hot pa
 
 | Lane | When | Model | Job |
 |---|---|---|---|
-| Ship | always | ship subagent | `git-bzl` / gazelle / targeted `bazel test` (+ bench/fuzz if hot) |
-| Review A | always | `gpt-5.6-sol-high` | Bugs, wrong semantics, missing tests, hot-path cost |
+| Ship | always | ship subagent | `git-bzl refresh`, gazelle, targeted `bazel test` (+ bench/fuzz if hot) |
+| Review A | always | `gpt-5.6-sol-high` | Read-only. Bugs, wrong semantics, missing tests, hot-path cost. |
 | Review B | hot path only | `claude-opus-5-thinking-high` | Same prompt as A, independent |
 
 Do not launch Review B on a not-hot change.
@@ -98,8 +100,9 @@ Do not launch Review B on a not-hot change.
 
 - `Read` the listed files and the pasted diff. One extra file only if a listed hook calls it (e.g. pushdown embed).
 - One pass. Cap ~15 tool calls. Then return findings or `no findings`.
-- Do **not**: bazel, gazelle, `git-bzl`, `gofmt`, write/edit, commit, `arh`, or any Shell that can change the tree.
-- Optional read-only Shell: `git diff -- <listed paths>` only.
+- Do **not**: `git-bzl refresh`, `git-bzl add`, gazelle, `bazel test`, `bazel build`, `gofmt`, write/edit, commit, `arh`, or any Shell that changes the tree.
+- If a check must run, use `go test` in that package (for example `go test -count=1 -run TestFoo .`). No sparse-checkout refresh.
+- Otherwise the only Shell is `git diff -- <listed paths>`.
 - Findings vs intent only. Not style. Not drive-by refactors.
 
 ### Collate
