@@ -17,6 +17,12 @@ Read once at session start:
 | go-code | `projects/go-code` (sparse git-bzl) | `ship.md` → arh → sahab merge |
 | infra-m3db | `projects/infra-m3db` | `ship.md` → sahab merge |
 
+## Reference docs
+
+Read when the task touches the topic:
+
+- `~/agent-config/docs/m3db-odin-reference.md` — M3DB on Odin: instances, etcd, namespaces, schemas, Grail/storage/cerberus lookups, native-histogram clusters
+
 ## Hard rules
 
 1. **Merge only with explicit user approval.** Never merge a PR without it.
