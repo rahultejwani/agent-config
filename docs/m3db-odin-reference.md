@@ -73,12 +73,16 @@ Find more MCPs: `aifx mcp list | rg -i <term>`; call without installing via
 
 | Odin instance | etcd UDG | Namespaces | Proto schema |
 |---|---|---|---|
-| `native-histogram-short-{dca,phx}` | `o-p-et-m3db-native-histogram-reg-{dca,phx}` | `metrics-10s:2d` | **none** (goal state `schemas: null`) |
+| `native-histogram-short-{dca,phx}` | `o-p-et-m3db-native-histogram-reg-{dca,phx}` | `metrics-10s:2d` | `uber.m3.sketch.Sketch` |
 | `native-histogram-hist-{dca,phx}` | same | `metrics-1m:40d` | `uber.m3.sketch.Sketch` |
 | `native-histogram-glacier-{dca,phx}` | same | `metrics-10m:{180d,1y,3y,5y}`, `metrics-1h:{1y,3y,5y}` | `uber.m3.sketch.Sketch` on all 7 |
 
 - All three instances in a region share one etcd; env = instance name.
-- Glacier instances have sub-clusters `-cluster`, `-cluster1`, `-cluster2` (9 nodes each).
+- Instances are sub-clustered: base `<inst>-cluster-<region>` holds 2-3
+  subcluster coordinators (goal state `schemas: null`, no data); data nodes
+  live in `-cluster1` / `-cluster2` and carry the schemas. **Never check
+  schemas with `LIMIT 1`** — aggregate over all nodes, ignoring the base
+  cluster.
 - Stale instances `glacier-native-histogram-{dca,phx}` exist but report no data.
 - Staging `sketch_test_dca`: etcd `o-p-et-m3db-staging-2-{dca,phx}`, namespace `sketch`, schema `uber.m3.sketch.Sketch`. Retention: Grail 40d/24h block vs `storage` CLI 48h/1h (unresolved).
 - go-code main (#288421) originally had wrong instance names (`native_histogram_*`, `glacier_native_histogram_*`), namespace `sketch`, and six non-existent per-cluster UDGs; fix tracked under MET-782.
