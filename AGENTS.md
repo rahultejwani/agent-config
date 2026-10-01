@@ -22,6 +22,7 @@ Read once at session start:
 Read when the task touches the topic:
 
 - `~/agent-config/docs/m3db-odin-reference.md` — M3DB on Odin: instances, etcd, namespaces, schemas, Grail/storage/cerberus lookups, native-histogram clusters
+- `~/agent-config/docs/native-histogram-release-checklist.md` — native histogram production release tracker; update it when a step lands
 
 ## Hard rules
 
