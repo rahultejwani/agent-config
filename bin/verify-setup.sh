@@ -74,5 +74,20 @@ if [[ -d "$HOME/go-code-sparse" ]]; then
   (cd "$HOME/go-code-sparse" && treehouse status >/dev/null 2>&1) && ok treehouse-go-code || bad treehouse-go-code
 fi
 
+if command -v aifx >/dev/null 2>&1; then
+  if aifx plugin list 2>/dev/null | grep -Fq 'generate-excalidraw'; then
+    ok generate-excalidraw-plugin
+  else
+    bad generate-excalidraw-plugin
+  fi
+  if [[ -f "$HOME/.cursor/mcp.json" ]] && python3 -c "import json; assert 'lucid-mcp' in json.load(open('$HOME/.cursor/mcp.json')).get('mcpServers', {})" >/dev/null 2>&1; then
+    ok lucid-mcp-cursor
+  else
+    bad lucid-mcp-cursor
+  fi
+else
+  warn 'aifx missing — skip diagramming checks'
+fi
+
 printf 'verify-setup: %s passed, %s failed\n' "$PASS" "$FAIL"
 exit "$FAIL"

@@ -68,6 +68,7 @@ claude          # or bin/claude-primary.sh
 - Merges Claude settings into `.claude/settings.local.json`
 - Installs `bin/claude` launcher on PATH
 - Copies Cursor rules to `~/.cursor/rules/agent.mdc`
+- Installs Uber diagramming: `generate-excalidraw` plugin + `lucid-mcp` on all AI clients
 - Runs shell bootstrap (`shell/setup.sh`)
 - Runs `bin/verify-setup.sh` — setup **fails** if verification fails
 

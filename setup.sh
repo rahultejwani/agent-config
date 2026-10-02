@@ -234,6 +234,28 @@ install_cursor_rules() {
   fi
 }
 
+# Uber-supported diagramming: Excalidraw skill + Lucid MCP on all AI clients.
+ensure_diagramming_tools() {
+  if ! command -v aifx >/dev/null 2>&1; then
+    log "aifx missing — skip diagramming tools (install aifx, then re-run setup)"
+    return 0
+  fi
+  if ! aifx plugin list 2>/dev/null | grep -Fq 'generate-excalidraw'; then
+    log "installing generate-excalidraw plugin"
+    aifx plugin add generate-excalidraw --user --silent || {
+      echo "agent-config: generate-excalidraw plugin add failed" >&2
+      return 1
+    }
+  else
+    log "generate-excalidraw plugin already present"
+  fi
+  log "ensuring lucid-mcp on all AI clients"
+  aifx mcp add lucid-mcp --clients all || {
+    echo "agent-config: lucid-mcp add failed" >&2
+    return 1
+  }
+}
+
 ensure_path() {
   local line='export PATH="$HOME/agent-config/bin:$PATH"'
   local marker='agent-config/bin'
@@ -262,6 +284,7 @@ ensure_repo_treehouse_configs
 install_launcher
 install_claude_settings
 install_cursor_rules
+ensure_diagramming_tools
 ensure_path
 if [[ -f "$CONFIG_ROOT/shell/setup.sh" ]]; then
   bash "$CONFIG_ROOT/shell/setup.sh"
