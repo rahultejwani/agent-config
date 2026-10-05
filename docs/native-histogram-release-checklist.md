@@ -17,7 +17,8 @@ Background and lookup commands: `docs/m3db-odin-reference.md`.
 - [ ] `kvconfig.optional-cluster-resolve-errors` stays 0
 - [ ] No `annotated-only source` or `failed to resolve UNS` log lines
 - [ ] Glacier ingester write rate, errors, latency flat
-- [ ] Active series on `native-histogram-glacier-{dca,phx}` stays 0
+- [x] Active series on `native-histogram-glacier-dca` stays 0 — verified 2026-10-05, all 7 namespaces plus pingless at 0
+- [x] Scalar glacier data intact — `glacier-a-regional` dca holding normal series counts (e.g. `metrics-10m:180d` ~89M)
 - [ ] A known 10m/1h series reads back unchanged
 
 ## C. Aggregator histogram carry (code, hot path)
@@ -67,6 +68,11 @@ Flip the KV sketch gate off, then the aggregator gates. Set
 
 ## Log
 
+- 2026-10-05 (later): dca rollout reported done for most zones. Verified
+  native-histogram-glacier-dca at 0 series and glacier-a-regional dca series
+  intact. Ingester uptime/error metrics and deployment events are not
+  reachable from here (no process metrics via statsdex_query, p3 MCP 404),
+  so restart and error checks still need the deployment dashboard.
 - 2026-10-05: both PRs merged to main (`67822d6` #303472, `bf348bd` #304566);
   CD rollout of glacier ingesters in progress. Native-histogram glacier
   clusters still at 0 active series. Rollout health not yet verified
