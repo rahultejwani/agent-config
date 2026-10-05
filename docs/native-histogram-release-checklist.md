@@ -7,9 +7,9 @@ Background and lookup commands: `docs/m3db-odin-reference.md`.
 
 ## A. Land the stack
 
-- [ ] #303472 merge (names, namespaces, shared etcd) — OPEN, not merged
-- [ ] #304566 merge (glacier ingester wiring, both switches off) — OPEN, mergeable
-- [ ] CD rolls glacier + glacier-regional `statsdex_m3dbingester`
+- [x] #303472 merge (names, namespaces, shared etcd) — on main as `67822d6f54825`
+- [x] #304566 merge (glacier ingester wiring, both switches off) — on main as `bf348bd8715e9`
+- [ ] CD rolls glacier + glacier-regional `statsdex_m3dbingester` — in progress (2026-10-05)
 
 ## B. Verify the glacier rollout (no traffic change expected)
 
@@ -67,6 +67,10 @@ Flip the KV sketch gate off, then the aggregator gates. Set
 
 ## Log
 
+- 2026-10-05: both PRs merged to main (`67822d6` #303472, `bf348bd` #304566);
+  CD rollout of glacier ingesters in progress. Native-histogram glacier
+  clusters still at 0 active series. Rollout health not yet verified
+  (ingester process metrics not found via statsdex_query).
 - 2026-10-01: checklist created. A–G all open. Verified: both PRs open;
   `enableSketchIngest` true only in staging-dca60; KV sketch gate emitted
   false for glacier envs; glacier shims contain the NH glacier sources;
