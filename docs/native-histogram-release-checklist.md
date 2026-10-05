@@ -1,86 +1,51 @@
-# Native histogram production release checklist
+# Native histogram release
 
-Status tracker for taking native histograms live. Update the checkboxes and
-the log at the bottom as steps land. Last verified 2026-10-01.
+Remaining work to take native histograms live. Updated 2026-10-05.
+Lookup commands: `docs/m3db-odin-reference.md`.
 
-Background and lookup commands: `docs/m3db-odin-reference.md`.
+Done: #303472 (`67822d6`) and #304566 (`bf348bd`) merged. Glacier ingesters
+know the native-histogram glacier clusters; both switches are off. Verified
+2026-10-05: `native-histogram-glacier-dca` at 0 series, `glacier-a-regional`
+dca series counts unchanged.
 
-## A. Land the stack
+## 1. Finish the glacier rollout
 
-- [x] #303472 merge (names, namespaces, shared etcd) — on main as `67822d6f54825`
-- [x] #304566 merge (glacier ingester wiring, both switches off) — on main as `bf348bd8715e9`
-- [ ] CD rolls glacier + glacier-regional `statsdex_m3dbingester` — in progress (2026-10-05)
+- [ ] phx zones roll out
+- [ ] dca and phx healthy: one restart per host, `kvconfig.optional-cluster-resolve-errors` at 0, glacier write rate and latency flat (check the deployment dashboard; ingester process metrics are not in statsdex_query)
 
-## B. Verify the glacier rollout (no traffic change expected)
+## 2. Aggregator histogram carry (hot path, blocks 10m/1h)
 
-- [ ] One restart per host, no crash loops
-- [ ] `kvconfig.optional-cluster-resolve-errors` stays 0
-- [ ] No `annotated-only source` or `failed to resolve UNS` log lines
-- [ ] Glacier ingester write rate, errors, latency flat
-- [x] Active series on `native-histogram-glacier-dca` stays 0 — verified 2026-10-05, all 7 namespaces plus pingless at 0
-- [x] Scalar glacier data intact — `glacier-a-regional` dca holding normal series counts (e.g. `metrics-10m:180d` ~89M)
-- [ ] A known 10m/1h series reads back unchanged
+10m/1h gauge native histograms are glacier-forwarded as 0 today, and the glacier aggregator rejects histogram payloads (`GaugeElem.AddExpoHistogram` returns `errExpoHistogramNotSupported`). Timers already do both halves over `TimedMetric.expo_histogram`, so no wire change is needed.
 
-## C. Aggregator histogram carry (code, hot path)
+- [ ] Hot gauge glacier flush attaches the histogram bytes
+- [ ] Glacier gauge merges and de-duplicates them
+- [ ] Gates default off; when off, drop and count instead of storing 0
+- [ ] Benchmarks, tests, two reviewers, deploy
 
-- [ ] Hot gauge glacier flush attaches the histogram instead of 0
-- [ ] Glacier gauge merges and de-duplicates it (mirror timers)
-- [ ] Zero guard: drop and count when the gate is off
-- [ ] Both gates default off
-- [ ] Benchmarks, tests, two reviewers
-- [ ] Merge and deploy the aggregators
+## 3. Staging validation
 
-## D. Staging validation
-
-- [ ] Decide staging storage: add 10m/1h sketch namespaces to `sketch_test_dca`, or validate only up to the glacier aggregator
-- [ ] Turn on the staging gates
-- [ ] 10m:180d and 1h:1y staging rule
+- [ ] Decide storage: add 10m/1h sketch namespaces to `sketch_test_dca`, or stop the check at the glacier aggregator
+- [ ] Gates on, one 10m and one 1h staging rule
 - [ ] Histograms arrive, ten 1m windows equal one 10m, no zero series, reads back
-- [ ] Turn the staging gates back off
 
-## E. Enable glacier writes in production
+## 4. Enable glacier writes
 
 - [ ] `enableSketchIngest: true` on glacier ingesters, deploy
-- [ ] Flip `m3db.ingester.writes.sketch-enabled` to true for glacier envs
-- [ ] Glacier-accept gate on, then hot-carry gate, per region
-- [ ] One canary 10m native-histogram rule, single service
-- [ ] Watch sketch writes, errors, series growth on `native-histogram-glacier-*`
-- [ ] Read the series back
-- [ ] Widen the rule
+- [ ] `m3db.ingester.writes.sketch-enabled` = true for glacier envs
+- [ ] Aggregator gates on, per region
+- [ ] Canary: one 10m rule, one service; watch writes and errors; read it back; widen
 
-## F. Hot path, 10s and 1m (independent of C)
+## 5. Hot path, 10s and 1m (independent of 2-4)
 
-- [ ] Wire hot ingesters: short + hist sources, optional etcd, KV gate emitted false, deploy
-- [ ] `enableSketchIngest: true` per zone, deploy
-- [ ] Flip the KV gate per zone
+- [ ] Wire hot ingesters to the short and hist clusters, KV gate emitted false, deploy
+- [ ] `enableSketchIngest: true` per zone, deploy, then flip the KV gate per zone
 - [ ] Canary 10s/1m rule, read it back
 
-## G. Query
+## 6. Query
 
-- [ ] Confirm scalar queries use a read mode that skips annotated-only sources
-- [ ] Add native-histogram sources to production query shims, deploy
+- [ ] Confirm scalar queries skip annotated-only sources, then add the native-histogram sources to the production query shims
 - [ ] `type:native-histogram` query returns the canary series
 
 ## Rollback
 
-Flip the KV sketch gate off, then the aggregator gates. Set
-`enableSketchIngest: false` and redeploy only if the route itself must go.
-
-## Log
-
-- 2026-10-05 (later): dca rollout reported done for most zones. Verified
-  native-histogram-glacier-dca at 0 series and glacier-a-regional dca series
-  intact. Ingester uptime/error metrics and deployment events are not
-  reachable from here (no process metrics via statsdex_query, p3 MCP 404),
-  so restart and error checks still need the deployment dashboard.
-- 2026-10-05: both PRs merged to main (`67822d6` #303472, `bf348bd` #304566);
-  CD rollout of glacier ingesters in progress. Native-histogram glacier
-  clusters still at 0 active series. Rollout health not yet verified
-  (ingester process metrics not found via statsdex_query).
-- 2026-10-01: checklist created. A–G all open. Verified: both PRs open;
-  `enableSketchIngest` true only in staging-dca60; KV sketch gate emitted
-  false for glacier envs; glacier shims contain the NH glacier sources;
-  `GaugeElem.AddExpoHistogram` still returns `errExpoHistogramNotSupported`
-  on main; R2 validator allows `NativeHistogram`; query shims have no NH
-  sources. Six clusters, namespaces and sketch schema verified live
-  2026-09-30.
+KV sketch gate off, then aggregator gates off. Redeploy with `enableSketchIngest: false` only if the route itself must go.
